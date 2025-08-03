@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>PdfAutomated: Merging, Splitting & Reducing PDFs</title>
+      <link rel="stylesheet" href="https://pyscript.net/releases/2025.7.3/core.css">
+      <script type="module" src="https://pyscript.net/releases/2025.7.3/core.js"></script>
+  </head>
+  <body>
+    <h1>PdfAutomated</h1>
+    <p>Refresh the page after each processing</p>
+    <h1>Merge PDFs</h1>
+    <p>Merge multiple PDFs into a single file</p>
+    <div id="merge-instruction">Ctrl + Click to select multiple files</div>
+    <label for="Upload Files"></label>
+    <input type="file" id="merge-file-upload" multiple>
+    <div>
+      <button id="merge-submit">Submit Files</button>
+    </div>
+    <div id="merge-output"></div>
+    <button id="merge-download">Download Merge File</button>
+    <h1>Extract PDF</h1>
+    <p>Extract pages from a PDF</p>
+    <label for="Upload File"></label>
+    <input type="file" id="ext-file-upload">
+    <div>
+      <label for=ext-start>Start Page</label>
+      <input id="ext-start" type="number" placeholder="Enter an integer..." step="1">
+      <label for=ext-end>End Page</label>
+      <input id="ext-end" type="number" placeholder="Enter an integer..." step="1">
+    </div>
+    <div>
+      <button id="ext-submit">Submit File</button>
+    </div>
+    <div id="ext-output"></div>
+    <button id="ext-download">Download Extracted Files</button>
+    <h1>Reduce PDF Size</h1>
+    <p>Reduce a PDF size</p>
+    <label for="Upload File"></label>
+    <input type="file" id="reduce-file-upload">
+    <div>
+      <button id="reduce-submit">Submit File</button>
+    </div>
+    <div id="reduce-output"></div>
+    <button id="reduce-download">Download Reduced File</button>
+    <script type="py" src="./main.py" config="./pyscript.json"></script>
+  </body>
+</html>
+
