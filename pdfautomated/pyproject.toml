@@ -3,16 +3,17 @@
 project_name = "PdfAutomated"
 bundle = "com.projectautomated"
 version = "0.0.1"
-url = "https://projectautomated.com/blogs/04_pdfauto"
+url = "https://github.com/chenkianwee/pdfautomated"
 license.file = "LICENSE"
 author = "Kian Wee Chen"
 author_email = "chenkianwee@gmail.com"
 
 [tool.briefcase.app.pdfautomated]
 formal_name = "PdfAutomated"
-description = "Tool for merg size"
-long_description = """More details about the app should go here.
+description = "Tool for merging, extracting and reducing PDFs"
+long_description = """Tool for merging, extracting and reducing PDFs
 """
+icon = "icons/pdfauto"
 sources = [
     "src/pdfautomated",
 ]
