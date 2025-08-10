@@ -21,7 +21,8 @@ test_sources = [
 ]
 
 requires = [
-    "pypdf>=5.9.0"
+    "pypdf>=5.9.0",
+    "aiofiles>=24.1.0"
 ]
 test_requires = [
     "pytest",
