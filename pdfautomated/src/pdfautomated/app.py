@@ -61,8 +61,19 @@ class PdfAutomated(toga.App):
         # endregion: extract tab
         
         # region: reduce tab
-        # Reduce tab
-        reduce_tab = toga.Box()
+        # reduce tab parameters
+        self.nreduce = 0
+        self.reduce_txt_dict = {}
+        self.reduce_row_id = 'reduce_row_'
+        self.reduce_txt_id = 'reduce_text_'
+        self.reduce_btn_id = 'reduce_btn_'
+        self.reduce_addbtn_id = 'reduce_addbtn_0'
+        self.reduce_rmbtn_id = 'reduce_rmbtn_'
+        self.reduce_res = None
+        self.sel_reduce_res_btn_id = 'reduce_res_sel_btn'
+        self.show_reduce_res_btn_id = 'reduce_res_show_btn'
+        # reduce tab
+        self.init_gui('reduce', 1, self.reduce_addbtn_id, self.exe_reduce)
         # endregion: reduce tab
         
         # tab container
@@ -70,12 +81,12 @@ class PdfAutomated(toga.App):
                                               style=Pack(margin=(10, 10), align_items='center'),
                                               content=[toga.OptionItem("MergePDF", self.merge_tab),
                                                        toga.OptionItem("ExtractPDF", self.extract_tab),
-                                                       toga.OptionItem("ReducePDF", reduce_tab)])
+                                                       toga.OptionItem("ReducePDF", self.reduce_tab)])
         # main box
         main_box = toga.Box(style=Pack(align_items='center'))
         main_box.add(tabs_container)
         # main window
-        self.main_window = toga.MainWindow(title=self.formal_name)
+        self.main_window = toga.MainWindow(title=self.formal_name, size=(900, 800))
         self.main_window.content = main_box
         self.main_window.show()
     
@@ -88,7 +99,9 @@ class PdfAutomated(toga.App):
                 self.nmerge+=1
             elif mode == 'extract':
                 self.nextract+=1
-        
+            elif mode == 'reduce':
+                self.nreduce+=1
+
         btn_box = toga.Box(flex=0, direction=COLUMN, margin=(self.grid_marginy, self.grid_marginx))
         add_button = toga.Button("+", id=addbtn_id, on_press=self.add_a_row_user, margin=(self.grid_marginy, self.grid_marginx))
         res_row = self.add_a_res_row(mode)
@@ -124,6 +137,13 @@ class PdfAutomated(toga.App):
             self.exe_extract_button = exe_btn
             self.extract_scroller = scroller
             self.extract_tab = tab
+        elif mode == 'reduce':
+            self.reduce_scroller_box = scroller_box
+            self.add_reduce_button = add_button
+            self.reduce_res_row = res_row
+            self.exe_reduce_button = exe_btn
+            self.reduce_scroller = scroller
+            self.reduce_tab = tab
 
     def add_a_res_row(self, mode: str) -> toga.Box:
         """
@@ -139,14 +159,16 @@ class PdfAutomated(toga.App):
         res_box : toga.Box
             box containing a row box with all the widgets for selecting where to save your result file
         """
-        def basic_res_row(sel_btn_id: str, open_btn_id: str, mode: str):
+        def basic_res_row(label: str, sel_btn_id: str, open_btn_id: str, mode: str):
             row_box = toga.Box(flex=0, direction=ROW, margin=(self.grid_marginy, self.grid_marginx))
+            res_label = toga.Label(label, margin=(self.grid_marginy, self.grid_marginx), style=Pack(text_align='center'))
             res_val = toga.TextInput(flex=1, readonly=True, margin=(self.grid_marginy, self.grid_marginx))
             res_val.enabled = False
 
             select_button = toga.Button("Select", id = sel_btn_id, on_press=self.select_resfile, margin=(self.grid_marginy, self.grid_marginx))
             open_button = toga.Button("Show", id=open_btn_id, on_press=self.open_folder, margin=(self.grid_marginy, self.grid_marginx))
             
+            row_box.add(res_label)
             row_box.add(res_val)
             row_box.add(select_button)
             row_box.add(open_button)
@@ -154,17 +176,26 @@ class PdfAutomated(toga.App):
                 self.merge_res = res_val
             elif mode == 'extract':
                 self.extract_res = res_val
+            elif mode == 'reduce':
+                self.reduce_res = res_val
             return row_box
         
         if mode == 'merge':
             sel_btn_id = self.sel_merge_res_btn_id
             open_btn_id = self.show_merge_res_btn_id
+            label = 'Result File Path'
         
         if mode == 'extract':
             sel_btn_id = self.sel_extract_res_btn_id
             open_btn_id = self.show_extract_res_btn_id
+            label = 'Result Folder Path'
 
-        row_box = basic_res_row(sel_btn_id, open_btn_id, mode)
+        if mode == 'reduce':
+            sel_btn_id = self.sel_reduce_res_btn_id
+            open_btn_id = self.show_reduce_res_btn_id
+            label = 'Result Folder Path'
+
+        row_box = basic_res_row(label, sel_btn_id, open_btn_id, mode)
         return row_box
 
     async def select_resfile(self, button):
@@ -177,14 +208,21 @@ class PdfAutomated(toga.App):
             path_name = await self.main_window.dialog(
                 toga.SelectFolderDialog(title='Save to'))
             self.extract_res.value = path_name
+        
+        elif button.id == self.sel_reduce_res_btn_id:
+            path_name = await self.main_window.dialog(
+                toga.SelectFolderDialog(title='Save to'))
+            self.reduce_res.value = path_name
 
     def add_a_row(self, mode: str) -> toga.Box:
         def row_basic(path_val_id, txt_dict, sel_btn_id, on_press_func, row_box_id):
+            label = toga.Label('Select a PDF', margin=(self.grid_marginy, self.grid_marginx), style=Pack(text_align='center'))
             path_val = toga.TextInput(flex=1, id = path_val_id, readonly=True, margin=(self.grid_marginy, self.grid_marginx))
             path_val.enabled = False
             txt_dict[path_val_id] = path_val
             select_button = toga.Button("Select", id = sel_btn_id, on_press=on_press_func, margin=(self.grid_marginy, self.grid_marginx))
             row_box = toga.Box(flex=0, id = row_box_id, direction=ROW, margin=(self.grid_marginy, self.grid_marginx))
+            row_box.add(label)
             row_box.add(path_val)
             row_box.add(select_button)
             return row_box
@@ -224,6 +262,15 @@ class PdfAutomated(toga.App):
             col_box.add(row_box2)
             
             return col_box
+        
+        if mode == 'reduce':
+            path_val_id = f"{self.reduce_txt_id}{self.nreduce}"
+            row_box_id = f"{self.reduce_row_id}{self.nreduce}"
+            txt_dict = self.reduce_txt_dict
+            sel_btn_id = f"{self.reduce_btn_id}{self.nreduce}"
+            on_press_func = self.select_file
+            row_box = row_basic(path_val_id, txt_dict, sel_btn_id, on_press_func, row_box_id)
+            return row_box
 
     def add_a_row_user(self, button):
         btn_split = button.id.split('_')
@@ -234,11 +281,17 @@ class PdfAutomated(toga.App):
             scroller_box = self.merge_scroller_box
             self.nmerge+=1
         
-        if btn_type == 'extract':
+        elif btn_type == 'extract':
             row_box = self.add_a_row(btn_type)
             rm_btn_id = f"{self.extract_rmbtn_id}{self.nextract}"
             scroller_box = self.extract_scroller_box
             self.nextract+=1
+
+        elif btn_type == 'reduce':
+            row_box = self.add_a_row(btn_type)
+            rm_btn_id = f"{self.reduce_rmbtn_id}{self.nreduce}"
+            scroller_box = self.reduce_scroller_box
+            self.nreduce+=1
 
         rm_button = toga.Button("Remove", id = rm_btn_id, on_press=self.rm_row_user, margin=(self.grid_marginy, self.grid_marginx))
         row_box.add(rm_button)
@@ -257,6 +310,10 @@ class PdfAutomated(toga.App):
         if btn_type == 'extract':
             scroller_box = self.extract_scroller_box
             row_id_ref = f"{self.extract_col_id}{btn_cnt}"
+
+        if btn_type == 'reduce':
+            scroller_box = self.reduce_scroller_box
+            row_id_ref = f"{self.reduce_row_id}{btn_cnt}"
 
         children = scroller_box.children
         for child in children:
@@ -278,6 +335,10 @@ class PdfAutomated(toga.App):
         elif btn_type == 'extract':
             txt_dict = self.extract_txt_dict
             txt_id = f"{self.extract_txt_id}{btn_cnt}"
+
+        elif btn_type == 'reduce':
+            txt_dict = self.reduce_txt_dict
+            txt_id = f"{self.reduce_txt_id}{btn_cnt}"
 
         path_name = await self.main_window.dialog(
             toga.OpenFileDialog(title='Select PDF for Processing'))
@@ -314,14 +375,26 @@ class PdfAutomated(toga.App):
             extract_file_ls = []
             start_stop_ls = []
             for child in children:
-                filepath = child.children[1].children[0].value
+                filepath = child.children[1].children[1].value
                 start = child.children[2].children[1].value
                 end = child.children[2].children[3].value
                 extract_file_ls.append(filepath)
                 start_stop_ls.append([start, end])
 
             return [extract_file_ls, start_stop_ls]
+        
+        elif mode == 'reduce':
+            children = self.reduce_scroller_box.children
+            reduce_file_ls = []
+            for child in children:
+                children2 = child.children
+                for child2 in children2:
+                    if type(child2) == toga.TextInput:
+                        reduce_file_ls.append(child2.value)
+                        break
 
+            return reduce_file_ls
+        
     async def open_folder(self, button):
         if button.id == self.show_merge_res_btn_id:
             file_path = self.merge_res.value
@@ -332,6 +405,9 @@ class PdfAutomated(toga.App):
 
         elif button.id == self.show_extract_res_btn_id:
             folder_path = self.extract_res.value
+        
+        elif button.id == self.show_reduce_res_btn_id:
+            folder_path = self.reduce_res.value
 
         if folder_path:
             try:
@@ -377,6 +453,12 @@ class PdfAutomated(toga.App):
             self.extract_progress.stop()
             self.extract_progress.value = 0
             self.extract_tab.remove(self.extract_progress)
+        elif mode == 'reduce':
+            self.add_reduce_button.enabled = True
+            self.exe_reduce_button.enabled = True
+            self.reduce_progress.stop()
+            self.reduce_progress.value = 0
+            self.reduce_tab.remove(self.reduce_progress)
 
     async def read_pdf(self, pdf_path: str):
         async with aiofiles.open(pdf_path, 'rb') as file:
@@ -548,6 +630,94 @@ class PdfAutomated(toga.App):
                             )
                         )
             self.reset_gui('extract')
+    
+    async def exe_reduce(self, button):
+        try:
+            # disable all the buttons
+            self.add_reduce_button.enabled = False
+            self.exe_reduce_button.enabled = False
+            # progress bar
+            self.reduce_progress = toga.ProgressBar(max=100, value=0)
+            self.reduce_tab.add(self.reduce_progress)
+            self.reduce_progress.value = 10
+
+            error_msgs = ''
+            file_ls = self.extract_parms('reduce')
+            self.reduce_progress.value = 20
+            fcnt = 0
+            for fstr in file_ls:
+                if fstr:
+                    fcnt+=1
+
+            if fcnt < 1:
+                error_msgs+='Please specify at least 1 PDF files for reduction\n'
+
+            # get the path for the res file
+            res_filepath = self.reduce_res.value
+            if not res_filepath:
+                error_msgs+='Please specify result filepath\n'
+
+            if error_msgs:
+                    await self.main_window.dialog(
+                            toga.ErrorDialog(
+                                    'Error',
+                                    error_msgs,
+                                )
+                            )
+                    self.reset_gui('reduce')
+                    return None
+            
+            # Read all PDFs asynchronously
+
+            tasks = []
+            for path in file_ls:
+                task = asyncio.create_task(self.read_pdf(path))
+                tasks.append(task)
+            
+            pdf_contents = await asyncio.gather(*tasks)
+            self.reduce_progress.value = 50
+            npdf = len(pdf_contents)
+            # Extract PDFs
+            for cnt, content in enumerate(pdf_contents):
+                reader = PdfReader(content)
+                filename_ext = Path(file_ls[cnt]).name
+                filename_split = str(filename_ext).split('.')
+                if len(filename_split) > 2:
+                    filename = ''
+                    for fn in filename_split:
+                        filename += fn
+                else:
+                    filename = filename_split[0]
+                
+                writer = PdfWriter()
+                for i in range(len(reader.pages)):
+                    writer.add_page(reader.pages[i])
+
+                writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+
+                pdf_res_filepath = Path(res_filepath).joinpath(f'{filename}_reduced.pdf')
+                writer.write(pdf_res_filepath)
+                writer.close()
+                self.reduce_progress.value = (cnt/npdf*50) + 50
+            
+            self.reduce_progress.value = 100
+            
+            await self.main_window.dialog(
+                        toga.InfoDialog(
+                                'Success!',
+                                'The reduction has been completed!',
+                            )
+                        )
+            self.reset_gui('reduce')
+
+        except Exception as e:
+            await self.main_window.dialog(
+                        toga.ErrorDialog(
+                                'Error',
+                                f"Error occured:\n {e}",
+                            )
+                        )
+            self.reset_gui('reduce')
 
 def main():
     return PdfAutomated()
